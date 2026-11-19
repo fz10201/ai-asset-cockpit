@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/ai-asset-cockpit/event.schema.json",
+  "title": "NormalizedEvent",
+  "description": "One canonical event as produced by src/ingest/normalize.py. Provider-specific leftovers live in provider_ext and are excluded from every comparison. Rules: docs/spec.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "provider",
+    "session_id",
+    "seq",
+    "role",
+    "content",
+    "provider_ext"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "provider": {
+      "enum": ["openai", "anthropic"]
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^s_[0-9a-f]{12}$"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "role": {
+      "enum": ["system", "user", "assistant", "tool"]
+    },
+    "created_at": {
+      "type": ["string", "null"]
+    },
+    "content": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ContentPart" }
+    },
+    "call": { "$ref": "#/$defs/ToolCall" },
+    "result": { "$ref": "#/$defs/ToolResult" },
+    "provider_ext": {
+      "type": "object",
+      "description": "Never compared. Anything we did not model on purpose."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["call"] },
+      "then": { "properties": { "role": { "const": "assistant" } } }
+    },
+    {
+      "if": { "required": ["result"] },
+      "then": { "properties": { "role": { "const": "tool" } } }
+    },
+    {
+      "if": { "properties": { "role": { "const": "tool" } }, "required": ["role"] },
+      "then": { "properties": { "content": { "maxItems": 0 } } }
+    }
+  ],
+  "$defs": {
+    "ContentPart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["text", "image", "file"] },
+        "text": { "type": "string" },
+        "url": { "type": "string" },
+        "mime_type": { "type": "string" }
+      }
+    },
+    "ToolCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["call_id", "name", "args_raw", "parse_status"],
+      "properties": {
+        "call_id": {
+          "type": "string",
+          "pattern": "^c_[0-9a-f]{16}$"
+        },
+        "name": { "type": "string" },
+        "args": { "type": ["object", "null"] },
+        "args_raw": { "type": "string" },
+        "parse_status": { "enum": ["ok", "incomplete", "invalid"] }
+      }
+    },
+    "ToolResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["call_id", "content", "is_error"],
+      "properties": {
+        "call_id": { "type": "string" },
+        "content": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ContentPart" }
+        },
+        "is_error": { "type": "boolean" }
+      }
+    }
+  }
+}

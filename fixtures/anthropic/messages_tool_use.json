@@ -1,0 +1,49 @@
+{
+  "id": "msg_conv_01Pq",
+  "type": "conversation",
+  "model": "claude-sonnet-4-6",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "read the first 20 lines of src/ingest/canonical.py at HEAD, then summarize what it guarantees"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "I'll read that file first."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_01AbCdEf",
+          "name": "read_file",
+          "input": {
+            "path": "src/ingest/canonical.py",
+            "revision": "HEAD"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_01AbCdEf",
+          "content": [
+            {
+              "type": "text",
+              "text": "canonical_json() sorts keys, strips whitespace, NFC-normalizes strings and rejects NaN."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
