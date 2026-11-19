@@ -4,17 +4,17 @@ A local-first dashboard for the prompts, conversations and spend you accumulate
 across AI providers — because right now all of it belongs to whichever chat window
 you happened to open.
 
-**Status: skeleton.** The canonical layer works. The ingest layer does not exist yet,
-and that is visible on purpose: three tests are red, and they are the specification
-for whoever writes it.
+**Status: ingest layer landed.** Both providers normalize to the same events, and the
+three acceptance tests that opened this repo are green:
 
 ```
 $ python -m pytest -q
-3 passed, 3 failed
+6 passed
 ```
 
-A red CI badge here means the acceptance surface is honest, not that the project is
-broken.
+They were written before the code, on purpose, and they did not move to meet it. The
+commit that added them (`f675e23`) is still in the history — that is the point of
+writing them down first.
 
 ---
 
@@ -60,10 +60,13 @@ python -m pip install -e ".[dev]"
 python -m pytest -q          # or: make accept
 ```
 
-## What "done" means
+## What the acceptance suite pins
 
-`make accept` is green. Specifically:
+`make accept` is green. Each test names a behaviour, not an implementation:
 
+- `test_canonical_json_ignores_key_order` — key order is never information
+- `test_canonical_json_rejects_nan` — a NaN in a fixture is a bug, not a value
+- `test_identifiers_are_derived_not_random` — same session, same ids, every run
 - `test_openai_tool_call_arguments_become_object` — a JSON **string** of arguments
   becomes an object, with the original text preserved in `args_raw`
 - `test_truncated_stream_marks_incomplete_instead_of_raising` — a stream cut
@@ -71,15 +74,11 @@ python -m pytest -q          # or: make accept
 - `test_providers_converge_on_one_shape` — the OpenAI and Anthropic fixtures
   normalize to byte-identical events
 
-The three green tests pin invariants that must not move while those are fixed:
-canonical form ignores key order, rejects `NaN`, and identifiers are derived rather
-than random.
-
 ## Roadmap
 
 - [x] Canonical serialization and per-record hashing
 - [x] Closed event schema + written contract
-- [ ] OpenAI / Anthropic ingest (the three red tests)
+- [x] OpenAI / Anthropic ingest — truncated streams degrade to `incomplete`, not throw
 - [ ] Gemini and DeepSeek exports
 - [ ] Encrypted local store with forward + rollback migrations
 - [ ] Hybrid BM25 + vector retrieval, recall@10 measured against a labelled set
